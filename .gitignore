@@ -3,3 +3,8 @@ __pycache__/
 build/
 dist/
 .venv/
+.kalun/
+kalun.json
+*.jsonl
+!fixtures/**/*.jsonl
+!fixtures/**/kalun.json

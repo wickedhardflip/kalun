@@ -127,6 +127,65 @@ class Rules(unittest.TestCase):
             doc = t.doc(git)
             self.assertEqual(statuses(doc)[0][1:], want)
 
+    def _claims(self, *sentences):
+        t = Transcript()
+        t.prompt()
+        for s in sentences:
+            t.say(s)
+        return [(c["type"], c["subject"]) for c in t.doc()["claims"]]
+
+    def test_more_phrasings_make_claims(self):
+        self.assertEqual(self._claims("I implemented src/app.py."), [("file_change", "src/app.py")])
+        self.assertEqual(self._claims("README.md was updated."), [("file_change", "README.md")])
+        self.assertEqual(self._claims("config.json has been rewritten."), [("file_change", "config.json")])
+        self.assertEqual(self._claims("The pytest suite passes."), [("tests_pass", None)])
+        self.assertEqual(self._claims("The build completed successfully."), [("build_ok", None)])
+        self.assertEqual(self._claims("tsc passes cleanly."), [("build_ok", None)])
+        self.assertEqual(self._claims("Committed abc1234."), [("committed", "abc1234")])
+        self.assertEqual(self._claims("Committed as commit abc1234."), [("committed", "abc1234")])
+
+    def test_strictness_holds(self):
+        for s in ("Your settings.json is untouched.", "I haven't updated README.md.",
+                  "I'll update README.md next.", "Once the tests pass I will commit.",
+                  "It would be built after review.", "Use e.g. a flag.",
+                  "Any committed files are listed below.", "The build might pass."):
+            self.assertEqual(self._claims(s), [], s)
+
+    def test_path_matching_across_styles(self):
+        cases = (("C:\\repo\\src\\a.py", "src/a.py"), ("C:\\repo\\a.py", "a.py"), ("/c/repo/a.py", "C:/repo/a.py"),
+                 ("C:\\repo\\a.py", "C:\\repo\\a.py"), ("C:\\repo\\.claude\\settings.json", ".claude/settings.json"),
+                 ("C:\\repo\\a.py", "./a.py"))
+        for edited, said in cases:
+            t = Transcript()
+            t.prompt()
+            t.run("Write", {"file_path": edited}, "File created successfully")
+            t.say(f"I updated {said}.")
+            self.assertEqual(statuses(t.doc())[0][1:], ("observed", "tool_confirmed_only"), (edited, said))
+
+    def test_same_basename_in_two_dirs_is_ambiguous(self):
+        t = Transcript()
+        t.prompt()
+        for d in ("a", "b"):
+            t.run("Write", {"file_path": f"C:\\repo\\{d}\\x.py"}, "ok")
+        t.say("I updated x.py.")
+        self.assertEqual(statuses(t.doc())[0][1:], ("partial", "ambiguous_path"))
+
+    def test_git_happy_path_commit_and_file(self):
+        t = Transcript()
+        t.prompt()
+        t.run("Edit", {"file_path": "C:\\repo\\src\\a.py"}, "The file C:\\repo\\src\\a.py has been updated successfully.")
+        t.run("Bash", {"command": 'git commit -am "x"'}, "[main bbb1234] x\n 1 file changed")
+        t.say("I updated src/a.py and committed it as bbb1234.")
+        git = StubGit()
+        git.run = lambda repo, *a: (
+            "C:/repo\n" if a[:2] == ("rev-parse", "--show-toplevel") else
+            "bbb1234ffff\n" if a[0] == "rev-parse" else
+            "aaa0000\n" if a[0] == "rev-list" and any("--before" in x for x in a) else
+            "bbb1234ffff\n" if a[0] == "rev-list" else
+            "src/a.py\n" if a[0] == "diff" else "" if a[0] == "status" else None)
+        self.assertEqual(sorted(statuses(t.doc(git))), [("committed", "observed", "head_moved"),
+                                                         ("file_change", "observed", "tool_and_git")])
+
     def test_denied_never_counts(self):
         t = Transcript()
         t.prompt()

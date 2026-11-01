@@ -18,6 +18,13 @@ class Hygiene(unittest.TestCase):
             for bad in FORBIDDEN:
                 self.assertFalse(bad in text, f"{name} contains {bad!r}")
 
+    def test_no_session_data_outside_fixtures(self):
+        files = subprocess.run(["git", "-C", str(ROOT), "ls-files"], capture_output=True, text=True).stdout.split()
+        for name in files:
+            if name.endswith((".jsonl", "kalun.json", "receipt.md", "flight-log.md")):
+                self.assertTrue(name.startswith("fixtures/"), f"{name} is session output outside fixtures/")
+            self.assertNotIn(".kalun/", name)
+
 
 if __name__ == "__main__":
     unittest.main()

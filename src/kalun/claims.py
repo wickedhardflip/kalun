@@ -11,15 +11,22 @@ RANK = {"observed": 2, "partial": 1, "unverified": 0}
 
 FENCE = re.compile(r"```.*?```", re.S)
 SENTENCE = re.compile(r"(?<=[.!?])\s+|\n+")
-HEDGE = re.compile(r"\b(will|going to|need to|should|would|if|once|until|not|no|unable)\b|n't|'ll", re.I)
+HEDGE = re.compile(r"\b(will|going to|need to|should|would|if|once|until|not|no|unable|might|may|could|probably|likely)\b|n't|'ll", re.I)
 CAP = re.compile(r"\b(except|but|aside from)\b", re.I)
 
-TESTS = re.compile(r"\btests?\b.{0,40}\b(pass(es|ed|ing)?|green)\b|\ball (tests )?(pass|green)", re.I)
-VERB = r"(created|wrote|added|updated|edited|modified|fixed|renamed|deleted)"
+TESTS = re.compile(r"\btests?\b.{0,40}\b(pass(es|ed|ing)?|green)\b|\ball (tests )?(pass|green)"
+                   r"|\b(suite|pytest|unittest|jest|vitest)\b.{0,30}\b(pass(es|ed|ing)?|green)\b", re.I)
+VERB = (r"(created|wrote|added|updated|edited|modified|fixed|renamed|deleted|changed|replaced|rewrote|"
+        r"implemented|built|appended|patched|saved|generated|refactored|written|rewritten|removed)")
 PATH = re.compile(r"(?<![\w./\\-])((?:[A-Za-z]:)?[\w./\\-]*\w\.[A-Za-z]\w{0,5})(?![\w/\\-])")
-COMMIT = re.compile(r"\bcommitted\b|\bmade a commit\b|\bcreated a commit\b", re.I)
+# "README.md was updated", "config.json has been rewritten": the path comes before the verb
+PASSIVE = re.compile(PATH.pattern + r"\s+(?:is|are|was|were|has been|have been|got)(?: now)?\s+" + VERB + r"\b", re.I)
+NOT_PATHS = {"e.g", "i.e"}
+COMMIT = re.compile(r"\bcommitted\b(?!\s+(?:files?|changes?|code|work|state|version)\b)|\bmade a commit\b"
+                    r"|\bcreated a commit\b|\bcommit (?=[0-9a-f]*\d)[0-9a-f]{7,40}\b", re.I)
 SHA = re.compile(r"\b[0-9a-f]{7,40}\b")
-BUILD = re.compile(r"\bbuild(s|ing)?\b.{0,30}\b(succeed\w*|pass\w*|clean|ok|green|complete\w*)\b|\bcompiles cleanly\b", re.I)
+BUILD = re.compile(r"\bbuild(s|ing)?\b.{0,30}\b(succeed\w*|pass\w*|clean|ok|green|complete\w*)\b|\bcompiles cleanly\b"
+                   r"|\bbuilt (successfully|cleanly)\b|\b(tsc|typecheck|type-check|compiles?|compiled)\b.{0,20}\b(pass\w*|clean\w*|succe\w+|ok)\b", re.I)
 OTHER = re.compile(r"\b(pushed|deployed|merged|published|released)\b", re.I)
 
 
@@ -59,13 +66,17 @@ def _matches(sent):
         yield "other", m.group(1).lower(), m
     for v in re.finditer(r"\b" + VERB + r"\b", sent, re.I):
         for p in PATH.finditer(sent, v.end()):
-            yield "file_change", p.group(1).replace("\\", "/"), p
+            if p.group(1).lower() not in NOT_PATHS:
+                yield "file_change", p.group(1).replace("\\", "/"), p
+    for m in PASSIVE.finditer(sent):
+        if m.group(1).lower() not in NOT_PATHS:
+            yield "file_change", m.group(1).replace("\\", "/"), m
 
 
 # ---- evidence -------------------------------------------------------------
 
 TEST_CMD = re.compile(r"(?:\b(?:pytest|py\.test|npm (?:run )?test|yarn test|pnpm test|dotnet test|go test|cargo test|vitest|jest)|-m (?:pytest|unittest))\b")
-BUILD_CMD = re.compile(r"\b(npm run build|yarn build|pnpm build|dotnet (build|publish)|cargo build|go build|vite build|next build|tsc|msbuild|make|docker build)\b")
+BUILD_CMD = re.compile(r"\b(npm run build|npm run typecheck|yarn build|pnpm build|dotnet (build|publish)|cargo (build|check)|go build|vite build|next build|tsc|msbuild|make|docker build)\b|\bpy_compile\b")
 COMMIT_CMD = re.compile(r"\bgit\b(\s+-C\s+\S+)?.*\bcommit\b")
 SED_I = re.compile(r"\bsed\s+(-[a-zA-Z]*i|--in-place)")
 EDIT_TOOLS = ("Edit", "Write", "NotebookEdit", "MultiEdit")
@@ -172,7 +183,8 @@ def _match_paths(claim_path, cwd, paths):
         return sorted(p for p in paths if p == cp)
     exact = _resolve(claim_path, cwd).lower()
     hit = sorted(p for p in paths if p == exact)
-    return hit or sorted(p for p in paths if p.endswith("/" + cp.lstrip("./")))
+    tail = "/" + re.sub(r"^(?:\.{0,2}/)+", "", cp)  # lstrip("./") would also eat the dot of ".claude"
+    return hit or sorted(p for p in paths if p.endswith(tail))
 
 
 def _check_file(events, claim, git_block, changed, cwd_of):
