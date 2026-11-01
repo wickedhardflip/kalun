@@ -1,0 +1,10 @@
+{
+  "hooks": {
+    "SessionStart": [
+      { "hooks": [{ "type": "command", "command": "kalun hook start" }] }
+    ],
+    "Stop": [
+      { "hooks": [{ "type": "command", "command": "kalun hook stop" }] }
+    ]
+  }
+}

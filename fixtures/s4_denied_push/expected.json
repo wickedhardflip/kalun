@@ -1,0 +1,88 @@
+{
+  "schema_version": "0.1",
+  "kalun_version": "0.1.0",
+  "session": {
+    "id": "s1",
+    "transcript_path": "transcript.jsonl",
+    "transcript_sha256": "d4fc7598d088bbcdbdd6ac85c2566faa2002603723aa17f5c0fa4260a06ae3ce",
+    "claude_code_version": "2.0",
+    "cwd_start": "C:\\repo",
+    "git_branch": "main",
+    "started_at": "2026-10-01T12:00:01.000Z",
+    "ended_at": "2026-10-01T12:00:04.000Z",
+    "turns": 1,
+    "compactions": 0,
+    "continued_in": null
+  },
+  "git": {
+    "available": false,
+    "repo_root": null,
+    "head_before": null,
+    "head_before_source": null,
+    "head_after": null,
+    "status_before": null,
+    "status_after": null,
+    "other_repos_touched": [
+      "C:/repo"
+    ]
+  },
+  "events": [
+    {
+      "seq": 1,
+      "ts": "2026-10-01T12:00:01.000Z",
+      "kind": "prompt",
+      "tool": null,
+      "dir": "C:\\repo",
+      "summary": "push it",
+      "outcome": null,
+      "uuid": "u1"
+    },
+    {
+      "seq": 2,
+      "ts": "2026-10-01T12:00:02.000Z",
+      "kind": "tool",
+      "tool": "Bash",
+      "dir": "C:\\repo",
+      "summary": "Bash git push origin main",
+      "outcome": "denied",
+      "uuid": "u2"
+    },
+    {
+      "seq": 3,
+      "ts": "2026-10-01T12:00:04.000Z",
+      "kind": "assistant_text",
+      "tool": null,
+      "dir": "C:\\repo",
+      "summary": "I pushed the change to origin.",
+      "outcome": null,
+      "uuid": "u4"
+    }
+  ],
+  "claims": [
+    {
+      "id": "c1",
+      "type": "other",
+      "subject": "pushed",
+      "text": "I pushed the change to origin.",
+      "event_seq": 3,
+      "status": "unverified",
+      "reason": "other_claims_are_not_checked",
+      "evidence": []
+    }
+  ],
+  "overall_status": "unverified",
+  "notes": [
+    {
+      "code": "denied",
+      "detail": "1 tool call(s) were denied and are not counted as evidence"
+    },
+    {
+      "code": "git_unavailable",
+      "detail": "start directory is not in a git repo"
+    },
+    {
+      "code": "other_repo_touched",
+      "detail": "C:/repo"
+    }
+  ]
+}

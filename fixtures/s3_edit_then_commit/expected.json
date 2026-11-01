@@ -1,0 +1,108 @@
+{
+  "schema_version": "0.1",
+  "kalun_version": "0.1.0",
+  "session": {
+    "id": "s1",
+    "transcript_path": "transcript.jsonl",
+    "transcript_sha256": "e1ab35bd7396d655926e358bb1bdfd7346a67eeaf0809e1c887b6d6dbcefbd66",
+    "claude_code_version": "2.0",
+    "cwd_start": "C:\\repo",
+    "git_branch": "main",
+    "started_at": "2026-10-01T12:00:01.000Z",
+    "ended_at": "2026-10-01T12:00:06.000Z",
+    "turns": 1,
+    "compactions": 0,
+    "continued_in": null
+  },
+  "git": {
+    "available": false,
+    "repo_root": null,
+    "head_before": null,
+    "head_before_source": null,
+    "head_after": null,
+    "status_before": null,
+    "status_after": null,
+    "other_repos_touched": [
+      "C:/repo"
+    ]
+  },
+  "events": [
+    {
+      "seq": 1,
+      "ts": "2026-10-01T12:00:01.000Z",
+      "kind": "prompt",
+      "tool": null,
+      "dir": "C:\\repo",
+      "summary": "fix the typo and commit",
+      "outcome": null,
+      "uuid": "u1"
+    },
+    {
+      "seq": 2,
+      "ts": "2026-10-01T12:00:02.000Z",
+      "kind": "tool",
+      "tool": "Edit",
+      "dir": "C:\\repo",
+      "summary": "Edit C:\\repo\\README.md",
+      "outcome": "ok",
+      "uuid": "u2"
+    },
+    {
+      "seq": 3,
+      "ts": "2026-10-01T12:00:04.000Z",
+      "kind": "tool",
+      "tool": "Bash",
+      "dir": "C:\\repo",
+      "summary": "Bash git add README.md && git commit -m \"Fix typo\"",
+      "outcome": "unknown",
+      "uuid": "u4"
+    },
+    {
+      "seq": 4,
+      "ts": "2026-10-01T12:00:06.000Z",
+      "kind": "assistant_text",
+      "tool": null,
+      "dir": "C:\\repo",
+      "summary": "I updated README.md and committed it as 4bb0767.",
+      "outcome": null,
+      "uuid": "u6"
+    }
+  ],
+  "claims": [
+    {
+      "id": "c1",
+      "type": "committed",
+      "subject": "4bb0767",
+      "text": "I updated README.md and committed it as 4bb0767.",
+      "event_seq": 4,
+      "status": "partial",
+      "reason": "commit_ran_head_not_checkable",
+      "evidence": [
+        3
+      ]
+    },
+    {
+      "id": "c2",
+      "type": "file_change",
+      "subject": "README.md",
+      "text": "I updated README.md and committed it as 4bb0767.",
+      "event_seq": 4,
+      "status": "observed",
+      "reason": "tool_confirmed_only",
+      "evidence": [
+        2
+      ]
+    }
+  ],
+  "overall_status": "partial",
+  "notes": [
+    {
+      "code": "git_unavailable",
+      "detail": "start directory is not in a git repo"
+    },
+    {
+      "code": "other_repo_touched",
+      "detail": "C:/repo"
+    }
+  ]
+}

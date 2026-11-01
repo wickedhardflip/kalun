@@ -1,0 +1,80 @@
+{
+  "schema_version": "0.1",
+  "kalun_version": "0.1.0",
+  "session": {
+    "id": "s1",
+    "transcript_path": "transcript.jsonl",
+    "transcript_sha256": "1121eceb781ee6f7655824caa2fe7b65d29201deb44134aa8708bbd7a8c609eb",
+    "claude_code_version": "2.0",
+    "cwd_start": "C:\\repo",
+    "git_branch": "main",
+    "started_at": "2026-10-01T12:00:01.000Z",
+    "ended_at": "2026-10-01T12:00:04.000Z",
+    "turns": 1,
+    "compactions": 0,
+    "continued_in": null
+  },
+  "git": {
+    "available": false,
+    "repo_root": null,
+    "head_before": null,
+    "head_before_source": null,
+    "head_after": null,
+    "status_before": null,
+    "status_after": null,
+    "other_repos_touched": []
+  },
+  "events": [
+    {
+      "seq": 1,
+      "ts": "2026-10-01T12:00:01.000Z",
+      "kind": "prompt",
+      "tool": null,
+      "dir": "C:\\repo",
+      "summary": "run the tests",
+      "outcome": null,
+      "uuid": "u1"
+    },
+    {
+      "seq": 2,
+      "ts": "2026-10-01T12:00:02.000Z",
+      "kind": "tool",
+      "tool": "Bash",
+      "dir": "C:\\repo",
+      "summary": "Bash pytest -q 2>&1 | tail -5",
+      "outcome": "failed",
+      "uuid": "u2"
+    },
+    {
+      "seq": 3,
+      "ts": "2026-10-01T12:00:04.000Z",
+      "kind": "assistant_text",
+      "tool": null,
+      "dir": "C:\\repo",
+      "summary": "All tests pass.",
+      "outcome": null,
+      "uuid": "u4"
+    }
+  ],
+  "claims": [
+    {
+      "id": "c1",
+      "type": "tests_pass",
+      "subject": null,
+      "text": "All tests pass.",
+      "event_seq": 3,
+      "status": "unverified",
+      "reason": "last_run_failed",
+      "evidence": [
+        2
+      ]
+    }
+  ],
+  "overall_status": "unverified",
+  "notes": [
+    {
+      "code": "git_unavailable",
+      "detail": "start directory is not in a git repo"
+    }
+  ]
+}

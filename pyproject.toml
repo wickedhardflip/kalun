@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kalun"
+version = "0.1.0"
+description = "A local flight log and receipt for Claude Code sessions."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+dependencies = []
+
+[project.scripts]
+kalun = "kalun.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
