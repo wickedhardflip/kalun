@@ -4,7 +4,7 @@
   "session": {
     "id": "s1",
     "transcript_path": "transcript.jsonl",
-    "transcript_sha256": "1c6c4fee92956e9660cf9c2509b4771351e62b173cda715c76abdae030a92cc2",
+    "transcript_sha256": "38add571efbcdc50ab4497ea3da023d7d1c9af8544d296a1a3fbc3f5ef3adbd4",
     "claude_code_version": "2.0",
     "cwd_start": "C:\\repo",
     "git_branch": "main",

@@ -51,11 +51,11 @@ class Transcript:
 
     def write(self, p, subs=None):
         """Write the transcript to p; subs maps (agent id, parent tool_use id) to a subagent Transcript."""
-        p.write_text("\n".join(self.lines) + "\n", encoding="utf-8")
+        p.write_bytes(("\n".join(self.lines) + "\n").encode())  # LF on every OS, the golden hash depends on it
         for (aid, tool_use_id), sub in (subs or {}).items():
             d = p.with_suffix("") / "subagents"
             d.mkdir(parents=True, exist_ok=True)
-            (d / f"agent-{aid}.jsonl").write_text("\n".join(sub.lines) + "\n", encoding="utf-8")
+            (d / f"agent-{aid}.jsonl").write_bytes(("\n".join(sub.lines) + "\n").encode())
             (d / f"agent-{aid}.meta.json").write_text(json.dumps(dict(toolUseId=tool_use_id)), encoding="utf-8")
 
     def doc(self, git=None, subs=None):

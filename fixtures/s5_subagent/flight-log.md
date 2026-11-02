@@ -7,7 +7,7 @@
 - Directory: C:\repo
 - Branch: main
 - Git: not available
-- Transcript: transcript.jsonl (sha256 1c6c4fee92956e9660cf9c2509b4771351e62b173cda715c76abdae030a92cc2)
+- Transcript: transcript.jsonl (sha256 38add571efbcdc50ab4497ea3da023d7d1c9af8544d296a1a3fbc3f5ef3adbd4)
 - Notes: subagents_folded, git_unavailable
 
 ## Turn 1: "fix the parser bug"
