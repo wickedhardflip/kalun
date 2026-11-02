@@ -1,4 +1,4 @@
-<p align="center"><img src="docs/logo/kalun-lockup.png" alt="Kalun" width="280"></p>
+<p align="center"><img src="docs/logo/kalun-lockup-hires.png" alt="Kalun" width="280"></p>
 
 # Kalun
 
