@@ -18,5 +18,4 @@ Only the project goes to GitHub, never Brian's results or session data. Fixtures
 - Git access is read-only (see the allowlist in `gitinfo.Git.run`).
 - Scrub secrets on all output.
 - Run tests: `python -m unittest discover -s tests`. Refresh goldens only for a deliberate change: `KALUN_UPDATE=1 ...`, then read the diff.
-- No Claude attribution in commits, README or any public text. No dashes in prose, US spelling.
 - Open work lives in `TASKS.md`.
