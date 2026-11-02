@@ -7,6 +7,7 @@ that the claim checks use and the JSON writer drops.
 import hashlib
 import json
 import re
+from pathlib import Path
 
 from .util import scrub
 
@@ -141,93 +142,124 @@ def read(path):
     turn = 0
     seen = set()
     pending = {}  # tool_use_id -> event
-    agent_seen = False
+    agent_calls = 0
+    cur_agent = None
 
     def add(kind, ts, summary, tool=None, cwd=None, **x):
         ev = dict(seq=len(events) + 1, ts=ts, kind=kind, tool=tool, dir=cwd,
                   summary=summary, outcome=None, uuid=x.pop("uuid", None))
         ev["_x"] = dict(turn=turn, cwd=cwd, **x)
+        if cur_agent:
+            ev["agent"] = cur_agent
         events.append(ev)
         return ev
 
-    with open(path, encoding="utf-8", errors="replace") as f:
-        for line in f:
-            if not line.strip():
-                continue
-            try:
-                rec = json.loads(line)
-            except ValueError:
-                bad += 1
-                continue
-            if not isinstance(rec, dict):
-                bad += 1
-                continue
-            t, ts, cwd = rec.get("type"), rec.get("timestamp"), rec.get("cwd")
-            if t == "continued-in":
-                meta["continued_in"] = rec.get("continuedInSessionId")
-                continue
-            if t == "system" and rec.get("subtype") == "compact_boundary":
-                meta["compactions"] += 1
-                add("boundary", ts, "Conversation compacted", uuid=rec.get("uuid"))
-                continue
-            if t not in ("user", "assistant"):
-                continue
-            if meta["id"] is None:
-                meta.update(id=rec.get("sessionId"), cwd_start=cwd, git_branch=rec.get("gitBranch"),
-                            claude_code_version=rec.get("version"), started_at=ts)
-            meta["ended_at"] = ts or meta["ended_at"]
-            msg = rec.get("message") or {}
-            content = msg.get("content")
-            if t == "user":
-                p = real_prompt(rec)
-                if p is not None:
-                    turn += 1
-                    add("prompt", ts, scrub(p.strip().replace("\n", " "))[:200], cwd=cwd,
-                        uuid=rec.get("uuid"), text=p)
-                elif isinstance(content, list):
-                    for b in content:
-                        if not (isinstance(b, dict) and b.get("type") == "tool_result"):
-                            continue
-                        ev = pending.get(b.get("tool_use_id"))
-                        if not ev:
-                            continue
-                        text = result_text(b.get("content"))
-                        tur = rec.get("toolUseResult")
-                        intr = bool(tur.get("interrupted")) if isinstance(tur, dict) else False
-                        ev["outcome"] = classify(text, bool(b.get("is_error")), intr,
-                                                 markers=ev["tool"] in SHELL)
-                        ev["_x"]["result"] = text
-                continue
-            if not isinstance(content, list):
-                continue
-            mid = msg.get("id")
-            for b in content:
-                if not isinstance(b, dict):
+    def scan(fp, agent=None):
+        nonlocal bad, turn, agent_calls, cur_agent
+        cur_agent = agent
+        with open(fp, encoding="utf-8", errors="replace") as f:
+            for line in f:
+                if not line.strip():
                     continue
-                if b.get("type") == "text" and b.get("text", "").strip():
-                    key = (mid, "t", b["text"])
-                    if key in seen:
+                try:
+                    rec = json.loads(line)
+                except ValueError:
+                    bad += 1
+                    continue
+                if not isinstance(rec, dict):
+                    bad += 1
+                    continue
+                t, ts, cwd = rec.get("type"), rec.get("timestamp"), rec.get("cwd")
+                if t == "continued-in":
+                    meta["continued_in"] = rec.get("continuedInSessionId")
+                    continue
+                if t == "system" and rec.get("subtype") == "compact_boundary":
+                    meta["compactions"] += 1
+                    add("boundary", ts, "Conversation compacted", uuid=rec.get("uuid"))
+                    continue
+                if t not in ("user", "assistant"):
+                    continue
+                if meta["id"] is None and not agent:
+                    meta.update(id=rec.get("sessionId"), cwd_start=cwd, git_branch=rec.get("gitBranch"),
+                                claude_code_version=rec.get("version"), started_at=ts)
+                if not agent:
+                    meta["ended_at"] = ts or meta["ended_at"]
+                msg = rec.get("message") or {}
+                content = msg.get("content")
+                if t == "user":
+                    p = None if agent else real_prompt(rec)  # a subagent's task text is in the parent's Agent call
+                    if p is not None:
+                        turn += 1
+                        add("prompt", ts, scrub(p.strip().replace("\n", " "))[:200], cwd=cwd,
+                            uuid=rec.get("uuid"), text=p)
+                    elif isinstance(content, list):
+                        for b in content:
+                            if not (isinstance(b, dict) and b.get("type") == "tool_result"):
+                                continue
+                            ev = pending.get(b.get("tool_use_id"))
+                            if not ev:
+                                continue
+                            text = result_text(b.get("content"))
+                            tur = rec.get("toolUseResult")
+                            intr = bool(tur.get("interrupted")) if isinstance(tur, dict) else False
+                            ev["outcome"] = classify(text, bool(b.get("is_error")), intr,
+                                                     markers=ev["tool"] in SHELL)
+                            ev["_x"]["result"] = text
+                    continue
+                if not isinstance(content, list):
+                    continue
+                mid = msg.get("id")
+                for b in content:
+                    if not isinstance(b, dict):
                         continue
-                    seen.add(key)
-                    add("assistant_text", ts, scrub(b["text"].strip().replace("\n", " "))[:200],
-                        cwd=cwd, uuid=rec.get("uuid"), text=b["text"], msg_id=mid,
-                        stop=msg.get("stop_reason"))
-                elif b.get("type") == "tool_use":
-                    if b.get("id") in seen:
-                        continue
-                    seen.add(b.get("id"))
-                    inp = b.get("input") or {}
-                    name = b.get("name")
-                    agent_seen = agent_seen or name == "Agent"
-                    ev = add("tool", ts, summarize(name, inp), tool=name, cwd=cwd,
-                             uuid=rec.get("uuid"), input=inp)
-                    ev["outcome"] = "unknown"
-                    pending[b.get("id")] = ev
+                    if b.get("type") == "text" and b.get("text", "").strip():
+                        key = (mid, "t", b["text"])
+                        if key in seen:
+                            continue
+                        seen.add(key)
+                        add("assistant_text", ts, scrub(b["text"].strip().replace("\n", " "))[:200],
+                            cwd=cwd, uuid=rec.get("uuid"), text=b["text"], msg_id=mid,
+                            stop=msg.get("stop_reason"))
+                    elif b.get("type") == "tool_use":
+                        if b.get("id") in seen:
+                            continue
+                        seen.add(b.get("id"))
+                        inp = b.get("input") or {}
+                        name = b.get("name")
+                        agent_calls += name == "Agent"
+                        ev = add("tool", ts, summarize(name, inp), tool=name, cwd=cwd,
+                                 uuid=rec.get("uuid"), input=inp)
+                        ev["outcome"] = "unknown"
+                        pending[b.get("id")] = ev
+    scan(path)
+    top_turn = turn
+    sub_dir = Path(path).with_suffix("") / "subagents"
+    placed = {}  # spawning event seq -> subagent events already placed after it
+    found = 0
+    for fp in sorted(sub_dir.glob("agent-*.jsonl")):  # simplified: one directory level, no nested-agent tree
+        try:
+            spawn = pending.get(json.loads(fp.with_suffix(".meta.json").read_text(encoding="utf-8")).get("toolUseId"))
+        except (OSError, ValueError, AttributeError):
+            spawn = None
+        turn = spawn["_x"]["turn"] if spawn else top_turn
+        start = len(events)
+        scan(fp, fp.stem[len("agent-"):])
+        found += 1
+        chunk = events[start:]
+        del events[start:]
+        at = events.index(spawn) + 1 + placed.get(spawn["seq"], 0) if spawn else len(events)
+        placed[spawn["seq"] if spawn else None] = placed.get(spawn["seq"] if spawn else None, 0) + len(chunk)
+        events[at:at] = chunk
+    turn = top_turn
+    for i, e in enumerate(events, 1):
+        e["seq"] = i
     meta["turns"] = turn
     if bad:
         notes.append(dict(code="unparsed_records", detail=f"{bad} line(s) could not be parsed"))
     if meta["compactions"]:
         notes.append(dict(code="compaction", detail=f"{meta['compactions']} compaction(s); claims judged against all evidence in the file"))
-    if agent_seen:
-        notes.append(dict(code="subagent_not_visible", detail="subagent internals are not in this transcript"))
+    if found:
+        notes.append(dict(code="subagents_folded", detail=f"{found} subagent transcript(s) folded into this session"))
+    if agent_calls > found:
+        notes.append(dict(code="subagent_not_visible", detail=f"{agent_calls - found} subagent transcript(s) not found"))
     return meta, events, notes

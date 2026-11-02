@@ -20,4 +20,4 @@ Session s1, 2026-10-01 08:00:01 EDT to 2026-10-01 08:00:04 EDT, 1 turns.
 
 ## Limits
 
-Kalun reads the transcript Claude Code wrote, plus git state before and after. It cannot see inside subagents, edits made by shell commands, or anything that never reached the transcript.
+Kalun reads the transcript Claude Code wrote, plus git state before and after. It cannot see subagents whose transcripts are missing, edits made by shell commands, or anything that never reached the transcript.

@@ -49,10 +49,19 @@ class Transcript:
         self._rec("assistant", [dict(type="tool_use", id=tid, name=tool, input=inp)])
         self._rec("user", [dict(type="tool_result", tool_use_id=tid, content=result, is_error=is_error)])
 
-    def doc(self, git=None):
+    def write(self, p, subs=None):
+        """Write the transcript to p; subs maps (agent id, parent tool_use id) to a subagent Transcript."""
+        p.write_text("\n".join(self.lines) + "\n", encoding="utf-8")
+        for (aid, tool_use_id), sub in (subs or {}).items():
+            d = p.with_suffix("") / "subagents"
+            d.mkdir(parents=True, exist_ok=True)
+            (d / f"agent-{aid}.jsonl").write_text("\n".join(sub.lines) + "\n", encoding="utf-8")
+            (d / f"agent-{aid}.meta.json").write_text(json.dumps(dict(toolUseId=tool_use_id)), encoding="utf-8")
+
+    def doc(self, git=None, subs=None):
         d = Path(tempfile.mkdtemp())
         p = d / "t.jsonl"
-        p.write_text("\n".join(self.lines) + "\n", encoding="utf-8")
+        self.write(p, subs)
         return build(p, d, git or StubGit())
 
 
@@ -220,6 +229,47 @@ class Rules(unittest.TestCase):
         p = Path(tempfile.mkdtemp()) / "t.jsonl"
         p.write_text("\n".join(t.lines), encoding="utf-8")
         return p
+
+    def _spawn(self):
+        """Parent spawns one subagent that edits a.py; returns (parent, subs)."""
+        t = Transcript()
+        t.prompt()
+        tid = f"t{t.n}"
+        t.run("Agent", {"description": "fix", "prompt": "fix a.py"}, "done")
+        s = Transcript()
+        s.run("Edit", {"file_path": "C:\\repo\\a.py"}, "The file C:\\repo\\a.py has been updated successfully.")
+        s.say("Fixed the bug in a.py.")
+        return t, {("abc123", tid): s}
+
+    def test_subagent_present(self):
+        t, subs = self._spawn()
+        doc = t.doc(subs=subs)
+        self.assertEqual({e.get("agent") for e in doc["events"]}, {None, "abc123"})
+        codes = [n["code"] for n in doc["notes"]]
+        self.assertIn("subagents_folded", codes)
+        self.assertNotIn("subagent_not_visible", codes)
+        sub_tools = [e["tool"] for e in doc["events"] if e.get("agent") and e["kind"] == "tool"]
+        self.assertEqual(sub_tools, ["Edit"])
+        self.assertEqual([(c["type"], c.get("agent"), c["status"]) for c in doc["claims"]],
+                         [("file_change", "abc123", "observed")])
+
+    def test_subagent_missing(self):
+        t, _ = self._spawn()
+        doc = t.doc()
+        codes = [n["code"] for n in doc["notes"]]
+        self.assertIn("subagent_not_visible", codes)
+        self.assertNotIn("subagents_folded", codes)
+        self.assertTrue(all("agent" not in e for e in doc["events"]))
+
+    def test_parent_claims_subagent_edit(self):
+        t, subs = self._spawn()
+        t.say("I updated a.py.")
+        doc = t.doc(subs=subs)
+        mine = [c for c in doc["claims"] if "agent" not in c]
+        self.assertEqual([(c["type"], c["status"]) for c in mine], [("file_change", "observed")])
+        edit = [e["seq"] for e in doc["events"] if e.get("agent") and e["tool"] == "Edit"]
+        self.assertEqual(mine[0]["evidence"], edit)
+        self.assertEqual(len(doc["claims"]), 2)  # the subagent's own claim stays separate
 
     def test_helpers(self):
         self.assertEqual(scrub("PGPASSWORD=hunter2 ok"), "[REDACTED] ok")

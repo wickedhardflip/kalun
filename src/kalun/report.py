@@ -52,7 +52,8 @@ def build(transcript, out_dir, git=None, refresh=False):
         session={k: meta[k] for k in keys},
         git=git_block,
         events=[{k: v for k, v in e.items() if k != "_x"} for e in events],
-        claims=[{k: c[k] for k in ("id", "type", "subject", "text", "event_seq", "status", "reason", "evidence")}
+        claims=[{k: c[k] for k in ("id", "type", "subject", "text", "event_seq", "status", "reason", "evidence", "agent")
+                 if k in c}
                 for c in claims],
         overall_status=overall(claims),
         notes=notes,

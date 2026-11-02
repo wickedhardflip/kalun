@@ -3,7 +3,7 @@ from .util import fmt_et, scrub
 
 LIMITS = (
     "Kalun reads the transcript Claude Code wrote, plus git state before and after. "
-    "It cannot see inside subagents, edits made by shell commands, or anything that never reached the transcript."
+    "It cannot see subagents whose transcripts are missing, edits made by shell commands, or anything that never reached the transcript."
 )
 
 
@@ -51,6 +51,8 @@ def flight_log(doc):
             label += f" {e['outcome']}"
         else:
             label, rest = {"prompt": "prompt", "assistant_text": "assistant", "boundary": "boundary"}[e["kind"]], e["summary"]
+        if e.get("agent"):
+            label = f"[{e['agent'][:8]}] {label}"
         out.append(f"- {fmt_et(e['ts']) if e['ts'] else '--:--:--'}  #{e['seq']}  {label} {rest}".rstrip())
     return "\n".join(out) + "\n"
 
@@ -61,7 +63,7 @@ def receipt(doc):
     shell = [e for e in ev if e["tool"] in ("Bash", "PowerShell")]
     wrote = sorted({e["summary"].split(" ", 1)[1] for e in ev
                     if e["tool"] in ("Edit", "Write", "NotebookEdit", "MultiEdit") and e["outcome"] == "ok" and " " in e["summary"]})
-    final = next((e["summary"] for e in reversed(ev) if e["kind"] == "assistant_text"), "")
+    final = next((e["summary"] for e in reversed(ev) if e["kind"] == "assistant_text" and not e.get("agent")), "")
     out = [
         "# Kalun Receipt",
         "",
@@ -75,7 +77,7 @@ def receipt(doc):
         out += ["| Claim | Status | Why | Evidence |", "|---|---|---|---|"]
         for c in doc["claims"]:
             ev_ref = ", ".join(f"#{i}" for i in c["evidence"]) or "none"
-            out.append(f"| {_cell(c['text'][:80])} | {c['status']} | {c['reason'].replace('_', ' ')} | {ev_ref} |")
+            out.append(f"| {_cell(('[' + c['agent'][:8] + '] ' if c.get('agent') else '') + c['text'][:80])} | {c['status']} | {c['reason'].replace('_', ' ')} | {ev_ref} |")
     else:
         out.append("No checkable claims were found in the assistant's text.")
     out += ["", "## Final message (verbatim, scrubbed)", ""]

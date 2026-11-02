@@ -44,10 +44,13 @@ def extract(events):
             for typ, subj, m in _matches(sent):
                 if HEDGE.search(sent[: m.end()]):
                     continue
-                found.pop((ev["_x"]["turn"], typ, subj), None)  # re-insert so order follows the last mention
-                found[(ev["_x"]["turn"], typ, subj)] = dict(
+                key = (ev["_x"]["turn"], ev.get("agent"), typ, subj)
+                found.pop(key, None)  # re-insert so order follows the last mention
+                found[key] = dict(
                     type=typ, subject=subj, text=sent[:200], event_seq=ev["seq"],
                     cap=bool(CAP.search(sent)))
+                if ev.get("agent"):
+                    found[key]["agent"] = ev["agent"]
     out = sorted(found.values(), key=lambda c: c["event_seq"])
     for i, c in enumerate(out, 1):
         c["id"] = f"c{i}"
@@ -215,9 +218,11 @@ def _check_file(events, claim, git_block, changed, cwd_of):
     return "unverified", "no_evidence", []
 
 
-def check(events, claims, git_block, changed, git):
+def check(all_events, claims, git_block, changed, git):
     for c in claims:
         t = c["type"]
+        # A subagent's claim is judged on its own events; the parent's on everything, including subagent work.
+        events = [e for e in all_events if e.get("agent") == c["agent"]] if c.get("agent") else all_events
         if t == "tests_pass":
             c["status"], c["reason"], c["evidence"] = _check_run(events, c, TEST_CMD, "test")
         elif t == "build_ok":

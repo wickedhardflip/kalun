@@ -133,7 +133,7 @@ Without hooks Kalun still works. It works out the starting commit from the sessi
 Kalun is deliberately small. Know what it cannot do:
 
 - It reads the transcript, so it is only as complete as the transcript.
-- Work done by subagents is not visible, only the call that started them.
+- Subagent work is shown only when its transcript is found next to the session (`<session>/subagents/`); otherwise only the call that started it is visible.
 - Files changed by shell commands are not tracked, only changes made with the edit tools.
 - Claim detection uses plain patterns. It can miss a claim or pick up a loose one.
 - It checks what a session claims about its own work, not whether the work is good. A passing test run proves the tests passed, not that the code is correct.

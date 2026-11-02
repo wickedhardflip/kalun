@@ -1,0 +1,155 @@
+{
+  "schema_version": "0.1",
+  "kalun_version": "0.1.0",
+  "session": {
+    "id": "s1",
+    "transcript_path": "transcript.jsonl",
+    "transcript_sha256": "1c6c4fee92956e9660cf9c2509b4771351e62b173cda715c76abdae030a92cc2",
+    "claude_code_version": "2.0",
+    "cwd_start": "C:\\repo",
+    "git_branch": "main",
+    "started_at": "2026-10-01T12:00:01.000Z",
+    "ended_at": "2026-10-01T12:00:04.000Z",
+    "turns": 1,
+    "compactions": 0,
+    "continued_in": null
+  },
+  "git": {
+    "available": false,
+    "repo_root": null,
+    "head_before": null,
+    "head_before_source": null,
+    "head_after": null,
+    "status_before": null,
+    "status_after": null,
+    "other_repos_touched": []
+  },
+  "events": [
+    {
+      "seq": 1,
+      "ts": "2026-10-01T12:00:01.000Z",
+      "kind": "prompt",
+      "tool": null,
+      "dir": "C:\\repo",
+      "summary": "fix the parser bug",
+      "outcome": null,
+      "uuid": "u1"
+    },
+    {
+      "seq": 2,
+      "ts": "2026-10-01T12:00:02.000Z",
+      "kind": "tool",
+      "tool": "Agent",
+      "dir": "C:\\repo",
+      "summary": "Agent fix parser",
+      "outcome": "ok",
+      "uuid": "u2"
+    },
+    {
+      "seq": 3,
+      "ts": "2026-10-01T12:00:01.000Z",
+      "kind": "tool",
+      "tool": "Edit",
+      "dir": "C:\\repo",
+      "summary": "Edit C:\\repo\\parser.py",
+      "outcome": "ok",
+      "uuid": "u1",
+      "agent": "a1b2c3"
+    },
+    {
+      "seq": 4,
+      "ts": "2026-10-01T12:00:03.000Z",
+      "kind": "tool",
+      "tool": "Bash",
+      "dir": "C:\\repo",
+      "summary": "Bash pytest -q",
+      "outcome": "ok",
+      "uuid": "u3",
+      "agent": "a1b2c3"
+    },
+    {
+      "seq": 5,
+      "ts": "2026-10-01T12:00:05.000Z",
+      "kind": "assistant_text",
+      "tool": null,
+      "dir": "C:\\repo",
+      "summary": "I fixed parser.py. The tests pass.",
+      "outcome": null,
+      "uuid": "u5",
+      "agent": "a1b2c3"
+    },
+    {
+      "seq": 6,
+      "ts": "2026-10-01T12:00:04.000Z",
+      "kind": "assistant_text",
+      "tool": null,
+      "dir": "C:\\repo",
+      "summary": "I updated parser.py with the fix. The tests pass.",
+      "outcome": null,
+      "uuid": "u4"
+    }
+  ],
+  "claims": [
+    {
+      "id": "c1",
+      "type": "file_change",
+      "subject": "parser.py",
+      "text": "I fixed parser.py.",
+      "event_seq": 5,
+      "status": "observed",
+      "reason": "tool_confirmed_only",
+      "evidence": [
+        3
+      ],
+      "agent": "a1b2c3"
+    },
+    {
+      "id": "c2",
+      "type": "tests_pass",
+      "subject": null,
+      "text": "The tests pass.",
+      "event_seq": 5,
+      "status": "observed",
+      "reason": "run_ok",
+      "evidence": [
+        4
+      ],
+      "agent": "a1b2c3"
+    },
+    {
+      "id": "c3",
+      "type": "file_change",
+      "subject": "parser.py",
+      "text": "I updated parser.py with the fix.",
+      "event_seq": 6,
+      "status": "observed",
+      "reason": "tool_confirmed_only",
+      "evidence": [
+        3
+      ]
+    },
+    {
+      "id": "c4",
+      "type": "tests_pass",
+      "subject": null,
+      "text": "The tests pass.",
+      "event_seq": 6,
+      "status": "observed",
+      "reason": "run_ok",
+      "evidence": [
+        4
+      ]
+    }
+  ],
+  "overall_status": "observed",
+  "notes": [
+    {
+      "code": "subagents_folded",
+      "detail": "1 subagent transcript(s) folded into this session"
+    },
+    {
+      "code": "git_unavailable",
+      "detail": "start directory is not in a git repo"
+    }
+  ]
+}
