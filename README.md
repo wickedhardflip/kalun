@@ -106,7 +106,7 @@ Hedged sentences ("I'll commit once the tests pass", "it isn't pushed yet") are 
 
 ## Subagents and git worktrees
 
-**Subagents.** When a session delegates work, Claude Code keeps each subagent's transcript in a `subagents/` folder next to the session transcript. Kalun reads those too. Every event and claim is tagged with the agent that made it (`[agent8]` in the Markdown, an `agent` field in the JSON). A subagent's own claims are checked only against its own work. The parent's claims are checked against everything, so "I fixed it" is observed if a subagent made the edit. If a subagent transcript cannot be found, the report says `subagent_not_visible` instead of guessing.
+**Subagents.** When a session delegates work, Claude Code keeps each subagent's transcript in a `subagents/` folder next to the session transcript. Kalun reads those too. Every event and claim is tagged with the agent that made it (a short id like `[a1b2c3]` in the Markdown, an `agent` field in the JSON). A subagent's own claims are checked only against its own work. The parent's claims are checked against everything, so "I fixed it" is observed if a subagent made the edit. If a subagent transcript cannot be found, the report says `subagent_not_visible` instead of guessing.
 
 **Worktrees.** Sessions run in a linked git worktree work the same way. Kalun finds the transcript from the session's own working directory, resolves each edit against the directory of whoever made it, and reports the branch and the shared repo. A report run from a different checkout still follows the session's recorded directory, not yours.
 
