@@ -31,6 +31,8 @@ Or install straight from GitHub: `pip install git+https://github.com/wickedhardf
 
 Python 3.9 or newer. Standard library only.
 
+Logos and colors: [brand guide](docs/brand.html).
+
 **Where output goes.** By default, into `~/.kalun/<session-id>/` in your home folder, outside any project, so reports never end up in a repo by accident. Use `--out <folder>` to choose another place. Nothing is uploaded anywhere. Transcripts can contain private code and prompts, so treat the output the same way.
 
 Output files:
