@@ -28,11 +28,11 @@ class StubGit(Git):
 
 class Transcript:
     def __init__(self):
-        self.lines, self.n = [], 0
+        self.lines, self.n, self.cwd = [], 0, CWD
 
     def _rec(self, typ, content, **extra):
         self.n += 1
-        rec = dict(type=typ, uuid=f"u{self.n}", sessionId="s1", cwd=CWD, version="2.0",
+        rec = dict(type=typ, uuid=f"u{self.n}", sessionId="s1", cwd=self.cwd, version="2.0",
                    timestamp=f"2026-10-01T12:00:{self.n:02d}.000Z", gitBranch="main",
                    message=dict(id=f"m{self.n}", role=typ, content=content), **extra)
         self.lines.append(json.dumps(rec))
