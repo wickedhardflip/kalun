@@ -70,7 +70,7 @@ class WorktreeCase(unittest.TestCase):
         self.assertTrue(g.commit_exists(self.main, new))  # commits are shared across worktrees
 
     def test_encode_cwd(self):
-        self.assertEqual(cli.encode_cwd(r"E:\Projects\worktrees\repo-branch"), "E--Projects-worktrees-repo-branch")
+        self.assertEqual(cli.encode_cwd(r"D:\work\trees\repo-branch"), "D--work-trees-repo-branch")
         self.assertEqual(cli.encode_cwd(r"C:\a b\my.repo_v2"), "C--a-b-my-repo-v2")
         self.assertEqual(cli.encode_cwd("C:\\caf\u00e9"), "C--caf-")  # non-ASCII letters are replaced too
 
