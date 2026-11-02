@@ -17,6 +17,9 @@
   "git": {
     "available": false,
     "repo_root": null,
+    "common_dir": null,
+    "linked_worktree": null,
+    "branch": null,
     "head_before": null,
     "head_before_source": null,
     "head_after": null,

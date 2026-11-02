@@ -196,8 +196,8 @@ def _check_file(events, claim, git_block, changed, cwd_of):
     for e in events:
         if e["seq"] < claim["event_seq"] and e["tool"] in EDIT_TOOLS and _ok(e):
             fp = (e["_x"].get("input") or {}).get("file_path") or (e["_x"].get("input") or {}).get("notebook_path")
-            if fp:
-                a.setdefault(norm_path(fp), []).append(e["seq"])
+            if fp:  # relative to the cwd of whoever made the edit (a subagent may sit in another worktree)
+                a.setdefault(_resolve(fp, e["_x"].get("cwd")).lower(), []).append(e["seq"])
     root = git_block["repo_root"]
     b = set()
     if git_block["available"] and root:

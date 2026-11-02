@@ -2,6 +2,7 @@
 import argparse
 import json
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -19,8 +20,8 @@ def projects_dir():
 
 
 def encode_cwd(cwd):
-    """Claude Code names a project folder after its cwd, every non-alphanumeric character turned into '-'."""
-    return "".join(c if c.isalnum() else "-" for c in str(cwd))
+    """Claude Code names a project folder after its cwd, every character outside [A-Za-z0-9] turned into '-'."""
+    return re.sub(r"[^A-Za-z0-9]", "-", str(cwd))  # simplified: Claude Code also shortens names over 200 chars with a hash; those need --transcript
 
 
 def find_transcript(session_id, cwd):

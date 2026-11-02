@@ -17,7 +17,10 @@ def _git_line(g):
     before = (g["head_before"] or "?")[:7]
     after = (g["head_after"] or "?")[:7]
     src = g["head_before_source"]
-    return f"{g['repo_root']}, HEAD {before} to {after} (before: {src})"
+    where = f", branch {g['branch']}" if g.get("branch") else ""
+    if g.get("linked_worktree"):
+        where += f", linked worktree of {g['common_dir']}"
+    return f"{g['repo_root']}{where}, HEAD {before} to {after} (before: {src})"
 
 
 def flight_log(doc):

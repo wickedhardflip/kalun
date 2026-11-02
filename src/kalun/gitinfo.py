@@ -39,11 +39,22 @@ class Git:
         # porcelain v1: "XY path" (renames: "XY old -> new")
         return sorted(ln[3:].split(" -> ")[-1].strip('"') for ln in out.splitlines() if len(ln) > 3)
 
+    def identity(self, root):
+        """Which repo and checkout this is. In a linked worktree `.git` is a file and --git-dir differs
+        from --git-common-dir (the shared repo). Empty values when git cannot say."""
+        out = self.run(root, "rev-parse", "--git-common-dir", "--git-dir")
+        lines = out.splitlines() if out else []
+        branch = (self.run(root, "rev-parse", "--abbrev-ref", "HEAD") or "").strip() or None
+        if len(lines) != 2:
+            return dict(common_dir=None, linked_worktree=None, branch=branch)
+        common, gdir = (Path(root, ln).resolve() for ln in lines)  # relative output is relative to root
+        return dict(common_dir=norm_path(str(common), lower=False), linked_worktree=common != gdir, branch=branch)
+
     def snapshot(self, path):
         root = self.root(path)
         if not root:
             return None
-        return dict(repo_root=root, head=self.head(root), status=self.status(root))
+        return dict(repo_root=root, head=self.head(root), status=self.status(root), **self.identity(root))
 
     def head_at(self, repo, ts):
         out = self.run(repo, "rev-list", "-1", f"--before={ts}", "HEAD")
@@ -76,13 +87,15 @@ def session_git(git, out_dir, cwd_start, started_at, refresh=False):
     else a snapshot taken now and saved, unless refresh is set.
     """
     out_dir = Path(out_dir)
-    block = dict(available=False, repo_root=None, head_before=None, head_before_source=None,
+    block = dict(available=False, repo_root=None, common_dir=None, linked_worktree=None, branch=None, head_before=None, head_before_source=None,
                  head_after=None, status_before=None, status_after=None, other_repos_touched=[])
     before = _load(out_dir / "git-before.json")
     root = before["repo_root"] if before else (git.root(cwd_start) if cwd_start else None)
     if not root:
         return block, []
     block.update(available=True, repo_root=root)
+    block.update(git.identity(root) if not before or "common_dir" not in before else
+                 {k: before[k] for k in ("common_dir", "linked_worktree", "branch")})
     if before:
         block.update(head_before=before.get("head"), head_before_source="hook",
                      status_before=before.get("status"))
