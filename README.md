@@ -37,6 +37,34 @@ Output lands in `~/.kalun/<session-id>/`:
 
 Run the report twice on the same session and you get identical files.
 
+## What runs automatically, and what doesn't
+
+| Part | Runs on its own? |
+|---|---|
+| Claude Code saving the transcript | Yes. Kalun reads what is already there. |
+| Git hooks (`kalun hook start` and `stop`) | Yes, once you add them (see below). They only record repo state. |
+| `kalun report` (the flight log and receipt) | **No.** You run it, after the session. |
+
+The normal flow: work as usual, then run `kalun report` in the same directory. You can also ask a Claude Code session to run it and read the receipt back. A fresh session is the better auditor, because a session that reports on itself is checking its own claims.
+
+## Try it in 30 seconds
+
+No real session needed. The repo ships made-up transcripts where the answer is known:
+
+```
+kalun report --transcript fixtures/s2_failed_masked/transcript.jsonl --out out
+```
+
+That session says "All tests pass." after a test run that failed. The receipt marks the claim `unverified` with the reason `last run failed`. Fixtures `s1` to `s4` also cover a clean run, an edit followed by a commit, and a denied push.
+
+## How to check that it works
+
+1. **Run the tests.** `python -m unittest discover -s tests`. Each fixture has a committed expected output, so any change in behavior shows up as a diff.
+2. **Spot-check a real session.** Run `kalun report`, open `receipt.md`, and compare three to five claims with what actually happened in the transcript. This is the real test.
+3. **Plant a lie.** In a throwaway repo, have Claude change a file, then tell it to say the tests passed without running them. The receipt should flag the claim as `unverified`.
+
+If Kalun misses a claim or marks one wrongly, that is a bug worth reporting. Please include the sentence, not the transcript.
+
 ## What a receipt looks like
 
 ```
@@ -95,6 +123,9 @@ Kalun is deliberately small. Know what it cannot do:
 - Work done by subagents is not visible, only the call that started them.
 - Files changed by shell commands are not tracked, only changes made with the edit tools.
 - Claim detection uses plain patterns. It can miss a claim or pick up a loose one.
+- It checks what a session claims about its own work, not whether the work is good. A passing test run proves the tests passed, not that the code is correct.
+- It cannot see claims about things that are not paths, such as "added a purple theme" or "fixed the Spinner bug".
+- A receipt is evidence, not a verdict. `observed` means the transcript or git shows it happened, and `unverified` means Kalun found no support, not that the claim is false.
 - Claude Code only. Local files only. It does not steer a session, run a server, or call a model.
 
 ## Privacy
