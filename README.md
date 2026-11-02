@@ -59,7 +59,7 @@ No real session needed. The repo ships made-up transcripts where the answer is k
 kalun report --transcript fixtures/s2_failed_masked/transcript.jsonl --out out
 ```
 
-That session says "All tests pass." after a test run that failed. The receipt marks the claim `unverified` with the reason `last run failed`. Fixtures `s1` to `s4` also cover a clean run, an edit followed by a commit, and a denied push.
+That session says "All tests pass." after a test run that failed. The receipt marks the claim `unverified` with the reason `last run failed`. Fixtures `s1` to `s5` also cover a clean run, an edit followed by a commit, a denied push, and a session that delegated work to a subagent.
 
 ## How to check that it works
 
@@ -104,6 +104,12 @@ The overall status is the worst of the claims. A session with no claims is `unve
 
 Hedged sentences ("I'll commit once the tests pass", "it isn't pushed yet") are skipped on purpose. Sentences with an exception ("all tests pass except the slow one") are capped at partial.
 
+## Subagents and git worktrees
+
+**Subagents.** When a session delegates work, Claude Code keeps each subagent's transcript in a `subagents/` folder next to the session transcript. Kalun reads those too. Every event and claim is tagged with the agent that made it (`[agent8]` in the Markdown, an `agent` field in the JSON). A subagent's own claims are checked only against its own work. The parent's claims are checked against everything, so "I fixed it" is observed if a subagent made the edit. If a subagent transcript cannot be found, the report says `subagent_not_visible` instead of guessing.
+
+**Worktrees.** Sessions run in a linked git worktree work the same way. Kalun finds the transcript from the session's own working directory, resolves each edit against the directory of whoever made it, and reports the branch and the shared repo. A report run from a different checkout still follows the session's recorded directory, not yours.
+
 ## Git hooks (optional, recommended)
 
 Hooks let Kalun record repo state at the start and end of a session. They only write small files under `~/.kalun/` and never block a session.
@@ -133,7 +139,8 @@ Without hooks Kalun still works. It works out the starting commit from the sessi
 Kalun is deliberately small. Know what it cannot do:
 
 - It reads the transcript, so it is only as complete as the transcript.
-- Subagent work is shown only when its transcript is found next to the session (`<session>/subagents/`); otherwise only the call that started it is visible.
+- Subagent work is shown only when its transcript is found next to the session (`<session>/subagents/`); otherwise only the call that started it is visible. A subagent that starts its own subagent is not followed.
+- Very long project paths (over 200 characters) need `--transcript` to point at the file directly.
 - Files changed by shell commands are not tracked, only changes made with the edit tools.
 - Claim detection uses plain patterns. It can miss a claim or pick up a loose one.
 - It checks what a session claims about its own work, not whether the work is good. A passing test run proves the tests passed, not that the code is correct.
