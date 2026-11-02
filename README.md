@@ -8,6 +8,8 @@ After a session, Kalun reads the transcript Claude Code already keeps on your ma
 
 It watches. It never steers. Nothing leaves your machine, nothing in your project is changed, and there is no server, account, model call or dependency.
 
+![A session says "All tests pass." after a failed test run. Kalun marks the claim unverified: last run failed.](docs/caught-lie.png)
+
 ## Why
 
 A session ends with a confident summary. Sometimes the tests were never run, the last run failed, the files changed after the run, or the commit never landed. Reading a long transcript to find out is slow, so most people don't. Kalun does that reading and hands you a one page receipt.
@@ -27,7 +29,9 @@ Or install straight from GitHub: `pip install git+https://github.com/wickedhardf
 
 Python 3.9 or newer. Standard library only.
 
-Output lands in `~/.kalun/<session-id>/`:
+**Where output goes.** By default, into `~/.kalun/<session-id>/` in your home folder, outside any project, so reports never end up in a repo by accident. Use `--out <folder>` to choose another place. Nothing is uploaded anywhere. Transcripts can contain private code and prompts, so treat the output the same way.
+
+Output files:
 
 | File | What it is |
 |---|---|
@@ -78,6 +82,8 @@ Overall: PARTIAL
 | I updated README.md and committed it as 4bb0767.   | observed | tool confirmed only           | #2 |
 ```
 
+![The three statuses side by side: observed, partial and unverified.](docs/statuses.png)
+
 The overall status is the worst of the claims. A session with no claims is `unverified` and says so, because silence is not proof.
 
 ## Statuses
@@ -112,6 +118,13 @@ Merge the entries from [`hooks/settings.example.json`](hooks/settings.example.js
   }
 }
 ```
+
+What each hook does:
+
+- `SessionStart` saves the git HEAD and status once, as the "before" snapshot. If one already exists for the session, it is kept.
+- `Stop` saves the "after" snapshot. Claude Code runs `Stop` each time it finishes responding, not only at the end of the session, so the file is overwritten each time and the last one wins.
+
+Both are quick and read only. They add the evidence Kalun needs to check "committed" claims. They do not generate the report; you still run `kalun report` yourself.
 
 Without hooks Kalun still works. It works out the starting commit from the session start time and marks it `derived`.
 
