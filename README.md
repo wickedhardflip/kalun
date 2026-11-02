@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/logo/kalun-lockup.png" alt="Kalun" width="280"></p>
+
 # Kalun
 
 **A flight log and a receipt for your Claude Code sessions.**
