@@ -13,7 +13,10 @@ _SCRUB = [
         r"-----BEGIN [A-Z ]*PRIVATE KEY-----",
         r"Bearer \S+",
         r"://[^/\s:@]+:[^@\s]+@",
-        r"(?i)(?:password|passwd|pwd|token|secret|api[_-]?key|authorization|PGPASSWORD)\s*[=:]\s*\S+",
+        # name, optional closing quote (JSON), separator, optional Basic/Bearer scheme, then a quoted or bare value
+        r"""(?i)(?:password|passwd|pwd|token|secret|api[_-]?key|authorization|PGPASSWORD)["']?\s*[=:]\s*(?:(?:basic|bearer)\s+)?(?:"[^"]*"|'[^']*'|\S+)""",
+        r"(?i)--(?:password|passwd|pass|token|secret|api-key)[ =]\S+",  # CLI flags
+        r"(?i)(?<=\s)(?:-u|--user)\s+[^\s:]+:\S+",  # curl -u user:pass
     )
 ]
 

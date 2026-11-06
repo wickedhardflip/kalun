@@ -273,6 +273,11 @@ class Rules(unittest.TestCase):
 
     def test_helpers(self):
         self.assertEqual(scrub("PGPASSWORD=hunter2 ok"), "[REDACTED] ok")
+        for leaky in ('{"password": "FAKE-x y"}', "Authorization: Basic FAKE-abc123", "--password FAKE-pw",
+                      "curl -u FAKE-user:FAKE-pw host", "api_key = 'FAKE one two'", "TOKEN=FAKE-t"):
+            self.assertNotIn("FAKE", scrub(leaky), leaky)
+        for clean in ("git push -u origin main", "run the tests, then stop", "secretary: Bob"):
+            self.assertEqual(scrub(clean), clean)
         self.assertEqual(norm_path("/c/Data/x/"), "c:/data/x")
         self.assertEqual(fmt_et("2026-10-29T17:59:11Z"), "13:59:11")  # EDT
         self.assertEqual(fmt_et("2026-12-01T17:00:00Z"), "12:00:00")  # EST
